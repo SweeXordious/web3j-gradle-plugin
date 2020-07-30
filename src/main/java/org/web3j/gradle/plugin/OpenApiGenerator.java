@@ -1,26 +1,33 @@
+/*
+ * Copyright 2020 Web3 Labs Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 package org.web3j.gradle.plugin;
 
+import java.io.File;
+import java.util.List;
+import javax.inject.Inject;
+
 import org.gradle.api.DefaultTask;
-import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.internal.impldep.aQute.bnd.build.Run;
-import org.gradle.workers.WorkerExecutor;
-import org.web3j.codegen.SolidityFunctionWrapperGenerator;
-import org.web3j.openapi.codegen.utils.GeneratorUtils;
+
 import org.web3j.openapi.codegen.GenerateOpenApi;
 import org.web3j.openapi.codegen.config.GeneratorConfiguration;
-
-import javax.inject.Inject;
-import java.io.File;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.web3j.openapi.codegen.utils.GeneratorUtils;
 
 public class OpenApiGenerator extends DefaultTask {
 
-    @Input
-    private String projectName;
+    @Input private String projectName;
 
     @Input private List<File> contractsBin;
     @Input private List<File> contractsAbi;
@@ -28,30 +35,27 @@ public class OpenApiGenerator extends DefaultTask {
     @Input private String outputDir;
     @Input private String packageName;
 
-    @Input @Optional
-    private int addressLength;
+    @Input @Optional private int addressLength;
 
     @Input @Optional private String contextPath;
 
     @Inject
-    public OpenApiGenerator() { }
+    public OpenApiGenerator() {}
 
     @TaskAction
     void generateOpenApi() {
-        GeneratorConfiguration generatorConfiguration = new GeneratorConfiguration(
-                projectName,
-                packageName,
-                outputDir,
-                GeneratorUtils.loadContractConfigurations(
-                        contractsAbi,
-                        contractsBin
-                ),
-                addressLength,
-                contextPath,
-                // The following parameters should be moved to the init block in OpenAPI codegen
-                "0.0.1",
-                projectName
-        );
+        GeneratorConfiguration generatorConfiguration =
+                new GeneratorConfiguration(
+                        projectName,
+                        packageName,
+                        outputDir,
+                        GeneratorUtils.loadContractConfigurations(contractsAbi, contractsBin),
+                        addressLength,
+                        contextPath,
+                        // The following parameters should be moved to the init block in OpenAPI
+                        // codegen
+                        "0.0.1",
+                        projectName);
         // This is not generating the SwaggerUI
         GenerateOpenApi generateOpenApi = new GenerateOpenApi(generatorConfiguration);
         generateOpenApi.generateAll();

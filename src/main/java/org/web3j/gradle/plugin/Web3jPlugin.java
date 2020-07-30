@@ -15,7 +15,6 @@ package org.web3j.gradle.plugin;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,7 +47,6 @@ public class Web3jPlugin implements Plugin<Project> {
     static final String ID = "org.web3j";
     final String generateOpenApiTaskName = "generateWeb3jOpenAPI";
 
-
     public void apply(final Project target) {
         target.getPluginManager().apply(JavaPlugin.class);
         target.getPluginManager().apply(SolidityPlugin.class);
@@ -68,11 +66,11 @@ public class Web3jPlugin implements Plugin<Project> {
 
         final File outputDir = buildSourceDir(extension, sourceSets.iterator().next());
 
-        OpenApiGenerator task = project.getTasks().create(generateOpenApiTaskName, OpenApiGenerator.class);
+        OpenApiGenerator task =
+                project.getTasks().create(generateOpenApiTaskName, OpenApiGenerator.class);
 
         task.setGroup(Web3jExtension.NAME);
-        task.setDescription(
-                "Generates Web3j-OpenAPI project from Solidity ABIs and BINs.");
+        task.setDescription("Generates Web3j-OpenAPI project from Solidity ABIs and BINs.");
 
         task.setOutputDir(outputDir.getAbsolutePath());
         task.setAddressLength(extension.getAddressBitLength());
@@ -88,7 +86,8 @@ public class Web3jPlugin implements Plugin<Project> {
         if (contractsData != null && !contractsData.isEmpty())
             return contractsData.stream().map(File::new).collect(Collectors.toList());
         else
-            return Collections.singletonList(new File(project.getBuildDir().getAbsolutePath() + "/resources/main/solidity"));
+            return Collections.singletonList(
+                    new File(project.getBuildDir().getAbsolutePath() + "/resources/main/solidity"));
     }
 
     private String getProjectVersion() {
