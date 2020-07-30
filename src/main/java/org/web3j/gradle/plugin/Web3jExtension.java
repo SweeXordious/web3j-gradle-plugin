@@ -49,6 +49,15 @@ public class Web3jExtension {
     /** Bit length for network addresses. */
     private int addressBitLength;
 
+    /** Bit length for network addresses. */
+    private boolean enableOpenApi;
+
+    /** Bit length for network addresses. */
+    private String contextPath;
+
+    /** Bit length for network addresses. */
+    private String projectName;
+
     public String getGeneratedPackageName() {
         return generatedPackageName;
     }
@@ -115,5 +124,30 @@ public class Web3jExtension {
         excludedContracts = new ArrayList<>();
         includedContracts = new ArrayList<>();
         addressBitLength = Address.DEFAULT_LENGTH / Byte.SIZE;
+        enableOpenApi = true;
+    }
+
+    public boolean isEnableOpenApi() {
+        return enableOpenApi;
+    }
+
+    public void setEnableOpenApi(boolean enableOpenApi) {
+        this.enableOpenApi = enableOpenApi;
+    }
+
+    public String getContextPath() {
+        return contextPath;
+    }
+
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

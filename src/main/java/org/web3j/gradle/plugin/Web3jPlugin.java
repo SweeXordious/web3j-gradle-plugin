@@ -15,6 +15,10 @@ package org.web3j.gradle.plugin;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Properties;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -54,6 +58,42 @@ public class Web3jPlugin implements Plugin<Project> {
                 target.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets();
 
         target.afterEvaluate(p -> sourceSets.all(sourceSet -> configure(target, sourceSet)));
+        target.afterEvaluate(p -> configureOpenApi(target, sourceSets));
+    }
+
+    private void configureOpenApi(Project project, SourceSetContainer sourceSets) {
+        final Web3jExtension extension =
+                (Web3jExtension) InvokerHelper.getProperty(project, Web3jExtension.NAME);
+
+        final File outputDir = buildSourceDir(extension, sourceSets.iterator().next());
+
+        String generateOpenApiTaskName = "generateWeb3jOpenAPI";
+        OpenApiGenerator task = project.getTasks().create(generateOpenApiTaskName, OpenApiGenerator.class);
+
+        task.setGroup(Web3jExtension.NAME);
+        task.setDescription(
+                "Generates Web3j-OpenAPI project from Solidity ABIs and BINs.");
+
+        task.setOutputDir(outputDir.getAbsolutePath());
+        task.setAddressLength(extension.getAddressBitLength());
+        task.setContextPath(extension.getContextPath());
+        task.setPackageName(extension.getGeneratedPackageName());
+        task.setProjectName(extension.getProjectName());
+        task.setContractsAbi(
+                Collections.singletonList(new File(project.getBuildDir().getAbsolutePath() + "/resources/main/solidity"))
+        );
+
+        final String srcSetName =
+                sourceSets.iterator().next().getName().equals("main")
+                        ? ""
+                        : capitalize((CharSequence) sourceSets.iterator().next().getName());
+
+        final String generateWrappersTaskName = "generate" + srcSetName + "ContractWrappers";
+
+        final SourceTask generateWrappersTask =
+                (SourceTask) project.getTasks().getByName(generateWrappersTaskName);
+
+        generateWrappersTask.dependsOn(task);
     }
 
     private String getProjectVersion() {
