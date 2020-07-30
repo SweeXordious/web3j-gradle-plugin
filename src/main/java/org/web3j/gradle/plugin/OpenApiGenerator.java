@@ -17,8 +17,7 @@ import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class OpenApiGenerator extends DefaultTask implements Runnable {
-    private WorkerExecutor executor = null;
+public class OpenApiGenerator extends DefaultTask {
 
     @Input
     private String projectName;
@@ -35,44 +34,27 @@ public class OpenApiGenerator extends DefaultTask implements Runnable {
     @Input @Optional private String contextPath;
 
     @Inject
-    public OpenApiGenerator(final WorkerExecutor executor) {
-        this.executor = executor;
-    }
-
-    public OpenApiGenerator(String projectName,
-                            List<File> contractsBin,
-                            List<File> contractsAbi,
-                            String outputDir,
-                            String packageName,
-                            int addressLength,
-                            String contextPath) {
-        this.projectName = projectName;
-        this.contractsBin = contractsBin;
-        this.contractsAbi = contractsAbi;
-        this.outputDir = outputDir;
-        this.packageName = packageName;
-        this.addressLength = addressLength;
-        this.contextPath = contextPath;
-    }
+    public OpenApiGenerator() { }
 
     @TaskAction
     void generateOpenApi() {
-        if (contractsBin.isEmpty()) contractsBin = contractsAbi;
-
-        executor.submit(
-                OpenApiGenerator.class,
-                configuration -> {
-                    configuration.setParams(
-                            projectName,
-                            contractsBin,
-                            contractsAbi,
-                            outputDir,
-                            packageName,
-                            addressLength,
-                            contextPath
-                    );
-                }
+        GeneratorConfiguration generatorConfiguration = new GeneratorConfiguration(
+                projectName,
+                packageName,
+                outputDir,
+                GeneratorUtils.loadContractConfigurations(
+                        contractsAbi,
+                        contractsBin
+                ),
+                addressLength,
+                contextPath,
+                // The following parameters should be moved to the init block in OpenAPI codegen
+                "0.0.1",
+                projectName
         );
+        // This is not generating the SwaggerUI
+        GenerateOpenApi generateOpenApi = new GenerateOpenApi(generatorConfiguration);
+        generateOpenApi.generateAll();
     }
 
     public String getProjectName() {
@@ -129,26 +111,5 @@ public class OpenApiGenerator extends DefaultTask implements Runnable {
 
     public void setContextPath(String contextPath) {
         this.contextPath = contextPath;
-    }
-
-    @Override
-    public void run() {
-        GeneratorConfiguration generatorConfiguration = new GeneratorConfiguration(
-                projectName,
-                packageName,
-                outputDir,
-                GeneratorUtils.loadContractConfigurations(
-                        contractsAbi,
-                        contractsBin
-                ),
-                addressLength,
-                contextPath,
-                // The following parameters should be moved to the init block in OpenAPI codegen
-                "0.0.1",
-                projectName
-        );
-        // This is not generating the SwaggerUI
-        GenerateOpenApi generateOpenApi = new GenerateOpenApi(generatorConfiguration);
-        generateOpenApi.generateAll();
     }
 }

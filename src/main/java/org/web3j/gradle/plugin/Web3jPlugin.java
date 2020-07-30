@@ -16,12 +16,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -47,6 +46,8 @@ import static org.codehaus.groovy.runtime.StringGroovyMethods.capitalize;
 public class Web3jPlugin implements Plugin<Project> {
 
     static final String ID = "org.web3j";
+    final String generateOpenApiTaskName = "generateWeb3jOpenAPI";
+
 
     public void apply(final Project target) {
         target.getPluginManager().apply(JavaPlugin.class);
@@ -57,8 +58,8 @@ public class Web3jPlugin implements Plugin<Project> {
         final SourceSetContainer sourceSets =
                 target.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets();
 
-        target.afterEvaluate(p -> sourceSets.all(sourceSet -> configure(target, sourceSet)));
         target.afterEvaluate(p -> configureOpenApi(target, sourceSets));
+        target.afterEvaluate(p -> sourceSets.all(sourceSet -> configure(target, sourceSet)));
     }
 
     private void configureOpenApi(Project project, SourceSetContainer sourceSets) {
@@ -67,7 +68,6 @@ public class Web3jPlugin implements Plugin<Project> {
 
         final File outputDir = buildSourceDir(extension, sourceSets.iterator().next());
 
-        String generateOpenApiTaskName = "generateWeb3jOpenAPI";
         OpenApiGenerator task = project.getTasks().create(generateOpenApiTaskName, OpenApiGenerator.class);
 
         task.setGroup(Web3jExtension.NAME);
@@ -79,21 +79,16 @@ public class Web3jPlugin implements Plugin<Project> {
         task.setContextPath(extension.getContextPath());
         task.setPackageName(extension.getGeneratedPackageName());
         task.setProjectName(extension.getProjectName());
-        task.setContractsAbi(
-                Collections.singletonList(new File(project.getBuildDir().getAbsolutePath() + "/resources/main/solidity"))
-        );
+        task.setContractsAbi(getContractsData(extension.getContractsAbi(), project));
+        task.setContractsBin(getContractsData(extension.getContractsBin(), project));
+    }
 
-        final String srcSetName =
-                sourceSets.iterator().next().getName().equals("main")
-                        ? ""
-                        : capitalize((CharSequence) sourceSets.iterator().next().getName());
-
-        final String generateWrappersTaskName = "generate" + srcSetName + "ContractWrappers";
-
-        final SourceTask generateWrappersTask =
-                (SourceTask) project.getTasks().getByName(generateWrappersTaskName);
-
-        generateWrappersTask.dependsOn(task);
+    // FIXME: To be renamed
+    private List<File> getContractsData(List<String> contractsData, Project project) {
+        if (contractsData != null && !contractsData.isEmpty())
+            return contractsData.stream().map(File::new).collect(Collectors.toList());
+        else
+            return Collections.singletonList(new File(project.getBuildDir().getAbsolutePath() + "/resources/main/solidity"));
     }
 
     private String getProjectVersion() {
@@ -171,6 +166,14 @@ public class Web3jPlugin implements Plugin<Project> {
 
         compileJava.source(task.getOutputs().getFiles().getSingleFile());
         compileJava.dependsOn(task);
+
+        if (extension.isEnableOpenApi()) {
+            final DefaultTask generateOpenApiTask =
+                    (DefaultTask) project.getTasks().getByName(generateOpenApiTaskName);
+
+            task.dependsOn(generateOpenApiTask);
+            task.mustRunAfter(generateOpenApiTask);
+        }
     }
 
     private SourceDirectorySet buildSourceDirectorySet(final SourceSet sourceSet) {

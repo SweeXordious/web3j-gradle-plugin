@@ -58,6 +58,12 @@ public class Web3jExtension {
     /** Bit length for network addresses. */
     private String projectName;
 
+    /** Included contract names from wrapper generation. */
+    private List<String> contractsAbi;
+
+    /** Included contract names from wrapper generation. */
+    private List<String> contractsBin;
+
     public String getGeneratedPackageName() {
         return generatedPackageName;
     }
@@ -149,5 +155,21 @@ public class Web3jExtension {
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public List<String> getContractsAbi() {
+        return contractsAbi;
+    }
+
+    public void setContractsAbi(List<String> contractsAbi) {
+        this.contractsAbi = contractsAbi;
+    }
+
+    public List<String> getContractsBin() {
+        return contractsBin;
+    }
+
+    public void setContractsBin(List<String> contractsBin) {
+        this.contractsBin = contractsBin;
     }
 }
